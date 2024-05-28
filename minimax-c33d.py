@@ -79,7 +79,9 @@ class Board:
     
     def score(self):
         # プレイヤーAの視点で勝てるかどうかを判定
-        # 勝てる場合1 負ける場合-1
+        # 勝てる場合1 負ける場合-1 引き分け0
+        if self.is_full():
+            return 0
         for line in self.lines:
             values = [self.board_a[x][y][z] for x, y, z in line]
             if values == [1, 1, 1]:
@@ -93,75 +95,38 @@ class Board:
 
 # ボードの状態と手番のプレイヤーを受け取り、最適な手を返したい
 def minimax(board, player, depth, alpha=-5, beta=5, graph=None, parent=None):
-  #print("Current depth:", depth)
-  # 次に打てる手を一つずつ試す
-  for move in board.get_possible_moves():
-    # 手を打つ
-    board.make_move(move, player)
+  print("depth:", depth)
+  print("nodes:", len(graph.nodes) - 1)
+  score = board.score()
+  if score is not None:
+    return score
 
-    # ノードを生成
-    node_id = uuid.uuid1()
-    if graph is not None:
+  if player:
+    for move in board.get_possible_moves():
+      node_id = uuid.uuid1()
+      if graph is not None:
         graph.add_node(node_id, data=move)
         if parent is not None:
-            graph.add_edge(parent, node_id)
-
-    # 引き分けになる手＝最後の一手の場合、他に探索できる手はない
-    if board.is_full():
+          graph.add_edge(parent, node_id)
+      board.make_move(move, player)
+      alpha = max(alpha, minimax(board, not player, depth + 1, alpha, beta, graph, parent))
       board.undo_move(move, player)
-      return 0
-  
-    score = board.score()
-
-    # MAX=scoreを最大化する手を選ぶ
-    if player:
-        # scoreがすでに最大(1)の場合、Aが勝利して終了できる手なのでこの時点でscoreを返す。
-        # また、他の手を探索する必要はない。
-        if score == 1:
-            board.undo_move(move, player)
-            #print(depth, "MAX WON.")
-            return 1
-        # scoreが最大化されていない場合、さらに次の場面の手を探索する。
-        else:
-            #print(depth, "Calling minimax", depth + 1)
-            score = minimax(board, not player, depth + 1, alpha, beta, graph, node_id)
-            #print(depth, "Got result from", depth + 1, ":", score)
-            board.undo_move(move, player)
-            # scoreがalpha以下なら、この枝は刈って探索を打ち切る
-            if score <= alpha:
-              break
-            # scoreがalphaよりも大きい場合、alphaを更新
-            else:
-              alpha = score
-            # alphaよりもbetaが小さい場合、これ以上探索する必要はない
-            if alpha > beta:
-              return beta
-
-    # MIN=scoreを最小化する手を選ぶ
-    else:
-        # scoreがすでに最小(-1)の場合、Bが勝利して終了できる手なのでこの時点でscoreを返す。
-        # また、他の手を探索する必要はない。
-        if score == -1:
-            board.undo_move(move, player)
-            #print(depth, "MIN WON.")
-            return -1
-        # scoreが最小化されていない場合、さらに次の場面の手を探索する。
-        else:
-            #print(depth, "Calling minimax", depth + 1)
-            score = minimax(board, not player, depth + 1, alpha, beta, graph, node_id)
-            #print(depth, "Got result from", depth + 1, ":", score)
-            board.undo_move(move, player)
-            # scoreがbeta以上なら、この枝は刈って探索を打ち切る
-            if score >= beta:
-              break
-            # scoreがbetaよりも小さい場合、betaを更新
-            else:
-              beta = score
-            # alphaよりもbetaが小さい場合、これ以上探索する必要はない
-            if alpha > beta:
-              return beta
-  # 探索した候補の手のうち、最善手を返す。
-  return alpha if player else beta
+      if alpha >= beta:
+        break
+    return alpha
+  else:
+    for move in board.get_possible_moves():
+      node_id = uuid.uuid1()
+      if graph is not None:
+        graph.add_node(node_id, data=move)
+        if parent is not None:
+          graph.add_edge(parent, node_id)
+      board.make_move(move, player)
+      beta = min(beta, minimax(board, not player, depth + 1, alpha, beta, graph, parent))
+      board.undo_move(move, player)
+      if alpha >= beta:
+        break
+    return beta
 
 def calculate():
     board = Board(randomize=True)
@@ -183,23 +148,22 @@ def draw_graph(graph):
 def main():
   nodes = []
   times = []
+  for i in range(1):
+    start = time.time()
+    score, total_nodes, graph = calculate()
+    end = time.time()
+    nodes.append(total_nodes)
+    times.append(end - start)
+    print("GAME No.", i)
+    print("Best score:", score)
+    print("Total nodes:", total_nodes)
+    print("Time:", times[-1], "s")
+    print("")
+    #draw_graph(graph)
   with open("result_c33d.csv", "w") as f:
     f.write("nodes,time\n")
-    for i in range(10):
-      start = time.time()
-      score, total_nodes, graph = calculate()
-      end = time.time()
-      nodes.append(total_nodes)
-      times.append(end - start)
-      """
-      print("GAME No.", i)
-      print("Best score:", score)
-      print("Total nodes:", total_nodes)
-      print("Time:", times[-1], "s")
-      print("")
-      """
-      #draw_graph(graph)    
-      f.write(str(nodes[-1]) + "," + str(times[-1]) + "\n")
+    for i in range(len(nodes)):
+      f.write(str(nodes[i]) + "," + str(times[i]) + "\n") 
 
 if __name__ == '__main__':
   main()
