@@ -2,6 +2,7 @@ import time
 import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 import matplotlib.pyplot as plt
+from multiprocessing import Pool
 
 from MiniMax import minimax
 
@@ -9,7 +10,7 @@ from Board2 import Board2
 from Board3 import Board3
 from Board4 import Board4 as Board
 
-def calculate():
+def _calculate():
     board = Board(randomize=True)
     graph = nx.DiGraph()
     graph.add_node("ROOT", data=(-1, -1, -1))
@@ -18,6 +19,19 @@ def calculate():
     score = minimax(board, current_player, 0, graph=graph, parent="ROOT")
     total_nodes = len(graph.nodes)-1
     return score, total_nodes, graph
+
+def  calculate(i):
+  start = time.time()
+  score, total_nodes, graph = _calculate()
+  end = time.time()
+  time_taken = end - start
+  print("GAME No.", i)
+  print("Best score:", score)
+  print("Total nodes:", total_nodes)
+  print("Time:", time_taken, "s")
+  print("")
+  #draw_graph(graph)
+  return total_nodes, time_taken
 
 def draw_graph(graph):
     pos = graphviz_layout(graph, prog="dot")
@@ -29,19 +43,13 @@ def draw_graph(graph):
 def main():
   nodes = []
   times = []
-  for i in range(1):
-    start = time.time()
-    score, total_nodes, graph = calculate()
-    end = time.time()
-    nodes.append(total_nodes)
-    times.append(end - start)
-    print("GAME No.", i)
-    print("Best score:", score)
-    print("Total nodes:", total_nodes)
-    print("Time:", times[-1], "s")
-    print("")
-    draw_graph(graph)
-  with open("result_c33d.csv", "w") as f:
+  with Pool(10) as p:
+    for i in range(10):
+      results = p.map(calculate, range(10))
+      nodes_batch, times_batch = zip(*results)
+      nodes.extend(nodes_batch)
+      times.extend(times_batch)
+  with open("results.csv", "w") as f:
     f.write("nodes,time\n")
     for i in range(len(nodes)):
       f.write(str(nodes[i]) + "," + str(times[i]) + "\n") 
