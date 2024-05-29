@@ -7,8 +7,8 @@ from multiprocessing import Pool
 from MiniMax import minimax
 
 from Board2 import Board2
-from Board3 import Board3
-from Board4 import Board4 as Board
+from Board3 import Board3 as Board
+from Board4 import Board4
 
 def _calculate():
     board = Board(randomize=True)
