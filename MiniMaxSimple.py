@@ -1,6 +1,6 @@
 import uuid
 
-def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
+def minimax_simple(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
   score = board.score()
   if score is not None:
     return score
