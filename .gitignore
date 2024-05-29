@@ -1,2 +1,3 @@
-/tmp
+tmp/
 *.csv
+__pycache__/
