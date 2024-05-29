@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Pool
 
 from MiniMax import minimax
+from MiniMaxSimple import minimax_simple
 
 from Board2 import Board2
 from Board3 import Board3 as Board
