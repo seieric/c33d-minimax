@@ -3,6 +3,7 @@ import networkx as nx
 from networkx.drawing.nx_agraph import graphviz_layout
 import matplotlib.pyplot as plt
 from multiprocessing import Pool
+import numpy as np
 
 from MiniMax import minimax
 from MiniMaxSimple import minimax_simple
@@ -17,21 +18,25 @@ def _calculate():
     graph.add_node("ROOT", data=(-1, -1, -1))
     # TrueならMAX, FalseならMIN
     current_player = True
-    score = minimax(board, current_player, 0, graph=graph, parent="ROOT")
+    final_depths = []
+    num_moves = []
+    score = minimax(board, current_player, 0, final_depths=final_depths, num_moves=num_moves, graph=graph, parent="ROOT")
     total_nodes = len(graph.nodes)-1
-    return score, total_nodes, graph
+    return score, total_nodes, graph, final_depths, num_moves
 
-def  calculate(i):
+def calculate(i):
   start = time.time()
-  score, total_nodes, graph = _calculate()
+  score, total_nodes, graph, final_depths, num_moves = _calculate()
   end = time.time()
   time_taken = end - start
   print("GAME No.", i)
+  print("Average final depths:", np.average(final_depths))
+  print("Average number of moves:", np.average(num_moves))
   print("Best score:", score)
   print("Total nodes:", total_nodes)
   print("Time:", time_taken, "s")
   print("")
-  #draw_graph(graph)
+  draw_graph(graph)
   return total_nodes, time_taken
 
 def draw_graph(graph):
@@ -44,9 +49,9 @@ def draw_graph(graph):
 def main():
   nodes = []
   times = []
-  with Pool(10) as p:
-    for i in range(10):
-      results = p.map(calculate, range(10))
+  with Pool(1) as p:
+    for i in range(1):
+      results = p.map(calculate, range(1))
       nodes_batch, times_batch = zip(*results)
       nodes.extend(nodes_batch)
       times.extend(times_batch)

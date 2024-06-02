@@ -1,11 +1,13 @@
 import uuid
 
-def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
+def minimax(board, player, depth, final_depths, num_moves, alpha=-1, beta=1, graph=None, parent=None):
   score = board.score()
   if score is not None:
+    final_depths.append(depth)
     return score
 
   moves = board.get_possible_moves()
+  num_moves.append(len(moves))
   if player:
     best = -5
     # 勝てる手がある場合はその手を選ぶ
@@ -20,6 +22,7 @@ def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
           graph.add_node(node_id, data=move)
           if parent is not None:
             graph.add_edge(parent, node_id)
+        final_depths.append(depth)
         return 1
     # 相手の勝ち手を防ぐ
     for move in moves:
@@ -34,8 +37,9 @@ def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
           if parent is not None:
             graph.add_edge(parent, node_id)
         board.make_move(move, player)
-        value = minimax(board, not player, depth + 1, alpha, beta, graph, node_id)
+        value = minimax(board, not player, depth + 1, final_depths, num_moves, alpha, beta, graph, node_id)
         board.undo_move(move, player)
+        final_depths.append(depth)
         return value
     # それ以外の手を試す
     for move in moves:
@@ -45,7 +49,7 @@ def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
         if parent is not None:
           graph.add_edge(parent, node_id)
       board.make_move(move, player)
-      best = max(best, minimax(board, not player, depth + 1, alpha, beta, graph, node_id))
+      best = max(best, minimax(board, not player, depth + 1, final_depths, num_moves, alpha, beta, graph, node_id))
       board.undo_move(move, player)
       alpha = max(alpha, best)
       if alpha >= beta:
@@ -64,6 +68,7 @@ def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
           graph.add_node(node_id, data=move)
           if parent is not None:
             graph.add_edge(parent, node_id)
+        final_depths.append(depth)
         return -1
     # 相手の勝ち手を防ぐ
     for move in moves:
@@ -78,8 +83,9 @@ def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
           if parent is not None:
             graph.add_edge(parent, node_id)
         board.make_move(move, player)
-        value = minimax(board, not player, depth + 1, alpha, beta, graph, node_id)
+        value = minimax(board, not player, depth + 1, final_depths, num_moves, alpha, beta, graph, node_id)
         board.undo_move(move, player)
+        final_depths.append(depth)
         return value
     for move in moves:
       node_id = uuid.uuid1()
@@ -88,7 +94,7 @@ def minimax(board, player, depth, alpha=-1, beta=1, graph=None, parent=None):
         if parent is not None:
           graph.add_edge(parent, node_id)
       board.make_move(move, player)
-      best = min(best, minimax(board, not player, depth + 1, alpha, beta, graph, node_id))
+      best = min(best, minimax(board, not player, depth + 1, final_depths, num_moves, alpha, beta, graph, node_id))
       board.undo_move(move, player)
       beta = min(beta, best)
       if alpha >= beta:
